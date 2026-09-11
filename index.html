@@ -52,7 +52,8 @@
         font-weight: 500;
         font-size: 14px;
       }
-      input {
+      input,
+      textarea {
         width: 100%;
         padding: 10px 12px;
         border: 1px solid #d1d5db;
@@ -60,13 +61,21 @@
         font-size: 15px;
         margin-bottom: 16px;
         font-family: inherit;
+        background: #fff;
+      }
+      textarea {
+        font-size: 14px;
+        line-height: 1.5;
+        resize: vertical;
+        min-height: 110px;
       }
       input[type="text"],
       input[type="password"] {
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size: 13px;
       }
-      input:focus {
+      input:focus,
+      textarea:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
@@ -147,6 +156,18 @@
         margin-bottom: 12px;
         line-height: 1.4;
       }
+      .char-counter {
+        font-size: 12px;
+        color: #9ca3af;
+        text-align: right;
+        margin-top: -10px;
+        margin-bottom: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .char-counter.over {
+        color: #991b1b;
+        font-weight: 600;
+      }
       .preview {
         background: #f9fafb;
         border: 1px solid #e5e7eb;
@@ -191,7 +212,7 @@
         <h1>Настройки автопостинга</h1>
       </div>
       <p class="subtitle">
-        Время публикации и диапазон фото для ежедневного поста в VK
+        Время, текст и диапазон фото для ежедневного поста в VK
       </p>
 
       <!-- Блок авторизации -->
@@ -214,6 +235,21 @@
           <h2>Время публикации (МСК)</h2>
           <input type="time" id="publishTime" required />
           <button id="submitTimeBtn">Сохранить время</button>
+        </div>
+
+        <!-- Текст поста -->
+        <div class="section">
+          <h2>Текст поста</h2>
+          <textarea
+            id="postText"
+            placeholder="Введите текст, который будет опубликован вместе с фото"
+            spellcheck="true"
+          ></textarea>
+          <div class="char-counter" id="charCounter">0 / 4000</div>
+          <div class="hint">
+            Поддерживаются переносы строк. Ctrl/Cmd + Enter — сохранить.
+          </div>
+          <button id="submitTextBtn">Сохранить текст</button>
         </div>
 
         <!-- Диапазон фото -->
@@ -262,6 +298,7 @@
       const REQUEST_TIMEOUT_MS = 15000;
       const STATUS_AUTOHIDE_MS = 3000;
       const PHOTO_ID_RE = /^photo-?\d+_\d+$/;
+      let POST_TEXT_MAX = 4000; // переопределяется с сервера
 
       // ── Элементы DOM ──────────────────────────────────
       const authSection = document.getElementById("authSection");
@@ -272,6 +309,10 @@
 
       const timeInput = document.getElementById("publishTime");
       const submitTimeBtn = document.getElementById("submitTimeBtn");
+
+      const postTextArea = document.getElementById("postText");
+      const charCounter = document.getElementById("charCounter");
+      const submitTextBtn = document.getElementById("submitTextBtn");
 
       const firstIdInput = document.getElementById("photoFirstId");
       const lastIdInput = document.getElementById("photoLastId");
@@ -333,7 +374,6 @@
             authStatus.style.color = "#991b1b";
             localStorage.removeItem("auth_token");
             savedToken = "";
-            // Поле НЕ очищаем — пользователь мог просто опечататься
             return;
           }
 
@@ -370,12 +410,20 @@
         if (data.publish_time) {
           timeInput.value = data.publish_time;
         }
+        if (typeof data.post_text === "string") {
+          postTextArea.value = data.post_text;
+        }
+        if (typeof data.post_text_max === "number") {
+          POST_TEXT_MAX = data.post_text_max;
+        }
         if (data.photo_first_id) {
           firstIdInput.value = data.photo_first_id;
         }
         if (data.photo_last_id) {
           lastIdInput.value = data.photo_last_id;
         }
+
+        updateCharCounter();
 
         if (typeof data.photos_count === "number") {
           renderPhotosPreview(
@@ -392,6 +440,15 @@
         lastEl.textContent = last || "—";
         previewEl.style.display = "block";
       }
+
+      // ── Счётчик символов ──────────────────────────────
+      function updateCharCounter() {
+        const len = postTextArea.value.length;
+        charCounter.textContent = `${len} / ${POST_TEXT_MAX}`;
+        charCounter.classList.toggle("over", len > POST_TEXT_MAX);
+      }
+
+      postTextArea.addEventListener("input", updateCharCounter);
 
       // ── Хелпер для авторизованного fetch ──────────────
       async function authFetch(url, options = {}) {
@@ -426,7 +483,7 @@
       submitTimeBtn.addEventListener("click", async () => {
         const timeValue = timeInput.value;
         if (!timeValue) {
-          showStatus("Укажите время", "error");
+          showStatus("Укажите время", "error", 0);
           return;
         }
 
@@ -462,6 +519,57 @@
 
       timeInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") submitTimeBtn.click();
+      });
+
+      // ── Сохранение текста поста ───────────────────────
+      submitTextBtn.addEventListener("click", async () => {
+        const text = postTextArea.value;
+
+        if (text.length > POST_TEXT_MAX) {
+          showStatus(
+            `Текст слишком длинный: ${text.length} из ${POST_TEXT_MAX}`,
+            "error",
+            0
+          );
+          return;
+        }
+
+        submitTextBtn.disabled = true;
+        showStatus("Отправка...", "info", 0);
+
+        try {
+          const res = await authFetch(`${API_BASE}/post_text`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text }),
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (res.ok) {
+            showStatus("Текст поста сохранён", "success");
+            applyConfig(data);
+          } else {
+            showStatus(data.error || "Ошибка сервера", "error", 0);
+          }
+        } catch (e) {
+          if (e.message !== "AUTH_EXPIRED") {
+            const msg =
+              e.name === "AbortError" ? "Сервер не отвечает" : "Ошибка сети или CORS";
+            showStatus(msg, "error", 0);
+            console.error(e);
+          }
+        } finally {
+          submitTextBtn.disabled = false;
+        }
+      });
+
+      postTextArea.addEventListener("keydown", (e) => {
+        // Ctrl/Cmd + Enter — сохранить
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          submitTextBtn.click();
+        }
       });
 
       // ── Сохранение диапазона фото ─────────────────────
@@ -516,7 +624,6 @@
         }
       });
 
-      // Enter в полях ID
       [firstIdInput, lastIdInput].forEach((el) => {
         el.addEventListener("keydown", (e) => {
           if (e.key === "Enter") submitPhotosBtn.click();
@@ -538,11 +645,6 @@
       // ── Показ статуса ─────────────────────────────────
       let statusTimer = null;
 
-      /**
-       * @param {string} text
-       * @param {"success"|"error"|"info"} type
-       * @param {number} autoHideMs 0 — не скрывать; по умолчанию 3000 для success
-       */
       function showStatus(text, type, autoHideMs) {
         statusEl.textContent = text;
         statusEl.style.display = "block";
@@ -552,7 +654,6 @@
         clearTimeout(statusTimer);
         statusTimer = null;
 
-        // Авто-скрытие только для success, если явно не отключено
         if (autoHideMs === undefined) {
           autoHideMs = type === "success" ? STATUS_AUTOHIDE_MS : 0;
         }
