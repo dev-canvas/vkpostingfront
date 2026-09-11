@@ -29,23 +29,133 @@
         width: 100%;
       }
       h1 {
-        margin: 0 0 8px 0;
+        margin: 0 0 24px 0;
         font-size: 20px;
         line-height: 1.3;
       }
-      .subtitle {
-        margin: 0 0 24px 0;
-        color: #6b7280;
+
+      /* ── Текущие настройки ───────────────────────── */
+      .current-settings {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        margin-bottom: 24px;
         font-size: 13px;
       }
-      h2 {
-        font-size: 14px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #6b7280;
-        margin: 0 0 12px 0;
-        font-weight: 600;
+      .current-settings summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 12px 14px;
+        font-weight: 500;
+        color: #374151;
+        user-select: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
       }
+      .current-settings summary::-webkit-details-marker {
+        display: none;
+      }
+      .current-settings summary::after {
+        content: "▾";
+        color: #9ca3af;
+        font-size: 10px;
+        transition: transform 0.15s;
+      }
+      .current-settings:not([open]) summary::after {
+        transform: rotate(-90deg);
+      }
+      .info-rows {
+        padding: 4px 14px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border-top: 1px solid #eef0f3;
+        margin-top: -1px;
+        padding-top: 12px;
+      }
+      .info-row {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        line-height: 1.5;
+      }
+      .info-label {
+        color: #6b7280;
+        flex-shrink: 0;
+        width: 110px;
+        font-size: 12px;
+        padding-top: 1px;
+      }
+      .info-value {
+        color: #111827;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        flex: 1;
+        min-width: 0;
+      }
+      .info-value.empty {
+        color: #9ca3af;
+        font-style: italic;
+        font-family: inherit;
+      }
+      .info-text {
+        white-space: pre-wrap;
+        max-height: 4.5em;
+        overflow: hidden;
+        font-family: inherit;
+      }
+
+      /* ── Вкладки ─────────────────────────────────── */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 24px;
+      }
+      .tab {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 10px 4px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #6b7280;
+        cursor: pointer;
+        position: relative;
+        border-radius: 0;
+        font-family: inherit;
+        transition: color 0.15s;
+      }
+      .tab:hover:not(:disabled) {
+        background: transparent;
+        color: #111827;
+      }
+      .tab.active {
+        color: #007bff;
+      }
+      .tab.active::after {
+        content: "";
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        bottom: -1px;
+        height: 2px;
+        background: #007bff;
+        border-radius: 2px;
+      }
+
+      /* ── Панели ─────────────────────────────────── */
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+
       label {
         display: block;
         margin-bottom: 6px;
@@ -59,7 +169,6 @@
         border: 1px solid #d1d5db;
         border-radius: 8px;
         font-size: 15px;
-        margin-bottom: 16px;
         font-family: inherit;
         background: #fff;
       }
@@ -67,7 +176,7 @@
         font-size: 14px;
         line-height: 1.5;
         resize: vertical;
-        min-height: 110px;
+        min-height: 140px;
       }
       input[type="text"],
       input[type="password"] {
@@ -80,14 +189,22 @@
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
       }
+      .field {
+        margin-bottom: 20px;
+      }
+      .field:last-of-type {
+        margin-bottom: 16px;
+      }
+
       button {
         width: 100%;
-        padding: 12px;
+        padding: 11px;
         background: #007bff;
         color: white;
         border: none;
         border-radius: 8px;
-        font-size: 15px;
+        font-size: 14px;
+        font-weight: 500;
         cursor: pointer;
         transition: background 0.15s;
         font-family: inherit;
@@ -99,22 +216,27 @@
         background: #ccc;
         cursor: not-allowed;
       }
-      button.secondary {
-        background: #6b7280;
-      }
-      button.secondary:hover:not(:disabled) {
-        background: #4b5563;
-      }
-      .row {
+
+      .meta {
         display: flex;
-        gap: 12px;
-        align-items: flex-end;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-top: 6px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        color: #9ca3af;
       }
-      .row > div {
-        flex: 1;
+      .char-counter {
+        font-variant-numeric: tabular-nums;
       }
+      .char-counter.over {
+        color: #991b1b;
+        font-weight: 600;
+      }
+
+      /* ── Статус-бар ──────────────────────────────── */
       #status {
-        margin-top: 16px;
+        margin-top: 20px;
         padding: 10px 12px;
         border-radius: 8px;
         font-size: 13px;
@@ -133,155 +255,136 @@
         background: #eff6ff;
         color: #1e40af;
       }
+
+      /* ── Авторизация ─────────────────────────────── */
       .auth-section {
-        padding-bottom: 20px;
+        padding-bottom: 8px;
       }
       .main-section {
         display: none;
       }
-      .section {
-        border-top: 1px solid #e5e7eb;
-        padding-top: 24px;
-        margin-top: 24px;
-      }
-      .section:first-of-type {
-        border-top: none;
-        padding-top: 0;
-        margin-top: 0;
-      }
-      .hint {
+      .auth-hint {
         font-size: 12px;
         color: #9ca3af;
-        margin-top: -10px;
-        margin-bottom: 12px;
+        margin-top: 8px;
         line-height: 1.4;
+        text-align: center;
       }
-      .char-counter {
-        font-size: 12px;
-        color: #9ca3af;
-        text-align: right;
-        margin-top: -10px;
-        margin-bottom: 12px;
-        font-variant-numeric: tabular-nums;
-      }
-      .char-counter.over {
+      .auth-hint.error {
         color: #991b1b;
-        font-weight: 600;
       }
-      .preview {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 12px;
-        font-size: 12px;
-        color: #374151;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        line-height: 1.6;
-        overflow-wrap: anywhere;
-      }
-      .preview .count {
-        color: #059669;
-        font-weight: 600;
-      }
-      .preview .label {
-        color: #6b7280;
-      }
+
       .logout-btn {
         background: transparent;
         color: #6b7280;
-        font-size: 12px;
-        padding: 6px 10px;
-        width: auto;
-        margin-top: 16px;
+        font-size: 13px;
+        padding: 8px;
+        width: 100%;
+        margin-top: 8px;
+        font-weight: 400;
       }
       .logout-btn:hover:not(:disabled) {
         background: #f3f4f6;
         color: #374151;
       }
-      .header-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-      }
     </style>
   </head>
   <body>
     <div class="card">
-      <div class="header-row">
-        <h1>Настройки автопостинга</h1>
-      </div>
-      <p class="subtitle">
-        Время, текст и диапазон фото для ежедневного поста в VK
-      </p>
+      <h1 id="cardTitle">Настройки автопостинга</h1>
 
       <!-- Блок авторизации -->
       <div class="auth-section" id="authSection">
-        <label for="authToken">Пароль</label>
-        <input
-          type="password"
-          id="authToken"
-          placeholder="Введите пароль"
-          autocomplete="off"
-        />
+        <div class="field">
+          <label for="authToken">Пароль</label>
+          <input
+            type="password"
+            id="authToken"
+            placeholder="Введите пароль"
+            autocomplete="off"
+          />
+        </div>
         <button id="authBtn">Войти</button>
-        <div id="authStatus" class="hint"></div>
+        <div id="authStatus" class="auth-hint"></div>
       </div>
 
       <!-- Основной блок -->
       <div class="main-section" id="mainSection">
-        <!-- Время публикации -->
-        <div class="section">
-          <h2>Время публикации (МСК)</h2>
-          <input type="time" id="publishTime" required />
+        <!-- Текущие (сохранённые) настройки -->
+        <details class="current-settings" open>
+          <summary>Текущие настройки</summary>
+          <div class="info-rows">
+            <div class="info-row">
+              <span class="info-label">⏰ Время</span>
+              <span class="info-value empty" id="infoTime">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">🖼️ Диапазон</span>
+              <span class="info-value empty" id="infoPhotos" title="">—</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">📝 Текст</span>
+              <span class="info-value info-text empty" id="infoText">—</span>
+            </div>
+          </div>
+        </details>
+
+        <!-- Вкладки -->
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="time" role="tab">Время</button>
+          <button class="tab" data-tab="text" role="tab">Текст</button>
+          <button class="tab" data-tab="photos" role="tab">Фото</button>
+        </div>
+
+        <!-- Панель: Время -->
+        <div class="panel active" id="panel-time">
+          <div class="field">
+            <label for="publishTime">Время публикации (МСК)</label>
+            <input type="time" id="publishTime" required />
+          </div>
           <button id="submitTimeBtn">Сохранить время</button>
         </div>
 
-        <!-- Текст поста -->
-        <div class="section">
-          <h2>Текст поста</h2>
-          <textarea
-            id="postText"
-            placeholder="Введите текст, который будет опубликован вместе с фото"
-            spellcheck="true"
-          ></textarea>
-          <div class="char-counter" id="charCounter">0 / 4000</div>
-          <div class="hint">
-            Поддерживаются переносы строк. Ctrl/Cmd + Enter — сохранить.
+        <!-- Панель: Текст -->
+        <div class="panel" id="panel-text">
+          <div class="field">
+            <label for="postText">Текст поста</label>
+            <textarea
+              id="postText"
+              placeholder="Введите текст, который будет опубликован вместе с фото"
+              spellcheck="true"
+            ></textarea>
+            <div class="meta">
+              <span>Ctrl/Cmd + Enter — сохранить</span>
+              <span class="char-counter" id="charCounter">0 / 4000</span>
+            </div>
           </div>
           <button id="submitTextBtn">Сохранить текст</button>
         </div>
 
-        <!-- Диапазон фото -->
-        <div class="section">
-          <h2>Диапазон фото</h2>
-          <label for="photoFirstId">ID первого фото</label>
-          <input
-            type="text"
-            id="photoFirstId"
-            placeholder="photo-239232916_456239539"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <label for="photoLastId">ID последнего фото</label>
-          <input
-            type="text"
-            id="photoLastId"
-            placeholder="photo-239232916_456239620"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <div class="hint">
-            Формат: <code>photo&lt;owner&gt;_&lt;id&gt;</code>. Список
-            генерируется автоматически по диапазону номеров.
+        <!-- Панель: Фото -->
+        <div class="panel" id="panel-photos">
+          <div class="field">
+            <label for="photoFirstId">ID первого фото</label>
+            <input
+              type="text"
+              id="photoFirstId"
+              placeholder="photo-239232916_456239539"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <div class="field">
+            <label for="photoLastId">ID последнего фото</label>
+            <input
+              type="text"
+              id="photoLastId"
+              placeholder="photo-239232916_456239620"
+              autocomplete="off"
+              spellcheck="false"
+            />
           </div>
           <button id="submitPhotosBtn">Сохранить диапазон</button>
-
-          <div id="photosPreview" class="preview" style="margin-top: 16px; display: none;">
-            <div><span class="label">Всего фото:</span> <span class="count" id="photosCount">0</span></div>
-            <div><span class="label">Первое:</span> <span id="photosFirst">—</span></div>
-            <div><span class="label">Последнее:</span> <span id="photosLast">—</span></div>
-          </div>
         </div>
 
         <button id="logoutBtn" class="logout-btn">Выйти</button>
@@ -293,19 +396,30 @@
     <script>
       // ── НАСТРОЙКИ ──────────────────────────────────────
       const API_BASE = "https://autopostingvkas.bothost.tech/api/schedule";
-      // Замените на адрес вашего бэкенда на Bothost
 
       const REQUEST_TIMEOUT_MS = 15000;
       const STATUS_AUTOHIDE_MS = 3000;
       const PHOTO_ID_RE = /^photo-?\d+_\d+$/;
-      let POST_TEXT_MAX = 4000; // переопределяется с сервера
+      let POST_TEXT_MAX = 4000;
 
-      // ── Элементы DOM ──────────────────────────────────
+      // ── DOM ───────────────────────────────────────────
+      const cardTitle = document.getElementById("cardTitle");
       const authSection = document.getElementById("authSection");
       const mainSection = document.getElementById("mainSection");
       const authInput = document.getElementById("authToken");
       const authBtn = document.getElementById("authBtn");
       const authStatus = document.getElementById("authStatus");
+
+      const infoTime = document.getElementById("infoTime");
+      const infoPhotos = document.getElementById("infoPhotos");
+      const infoText = document.getElementById("infoText");
+
+      const tabs = document.querySelectorAll(".tab");
+      const panels = {
+        time: document.getElementById("panel-time"),
+        text: document.getElementById("panel-text"),
+        photos: document.getElementById("panel-photos"),
+      };
 
       const timeInput = document.getElementById("publishTime");
       const submitTimeBtn = document.getElementById("submitTimeBtn");
@@ -318,13 +432,18 @@
       const lastIdInput = document.getElementById("photoLastId");
       const submitPhotosBtn = document.getElementById("submitPhotosBtn");
 
-      const previewEl = document.getElementById("photosPreview");
-      const countEl = document.getElementById("photosCount");
-      const firstEl = document.getElementById("photosFirst");
-      const lastEl = document.getElementById("photosLast");
-
       const logoutBtn = document.getElementById("logoutBtn");
       const statusEl = document.getElementById("status");
+
+      // ── Состояние "на сервере" ────────────────────────
+      // Отдельно от формы: показывает, что реально сохранено.
+      const currentState = {
+        publish_time: "",
+        photo_first_id: "",
+        photo_last_id: "",
+        photos_count: 0,
+        post_text: "",
+      };
 
       // ── Хранение пароля ───────────────────────────────
       let savedToken = localStorage.getItem("auth_token") || "";
@@ -333,7 +452,19 @@
         tryAuth(savedToken);
       }
 
-      // ── Утилита: fetch с таймаутом ────────────────────
+      // ── Переключение вкладок ──────────────────────────
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const name = tab.dataset.tab;
+          tabs.forEach((t) => t.classList.toggle("active", t === tab));
+          Object.entries(panels).forEach(([key, el]) => {
+            el.classList.toggle("active", key === name);
+          });
+          statusEl.style.display = "none";
+        });
+      });
+
+      // ── fetch с таймаутом ─────────────────────────────
       async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -348,8 +479,7 @@
       authBtn.addEventListener("click", () => {
         const token = authInput.value.trim();
         if (!token) {
-          authStatus.textContent = "Введите пароль";
-          authStatus.style.color = "#991b1b";
+          setAuthHint("Введите пароль", true);
           return;
         }
         tryAuth(token);
@@ -359,10 +489,14 @@
         if (e.key === "Enter") authBtn.click();
       });
 
+      function setAuthHint(text, isError = false) {
+        authStatus.textContent = text;
+        authStatus.classList.toggle("error", isError);
+      }
+
       async function tryAuth(token) {
         authBtn.disabled = true;
-        authStatus.textContent = "Проверка...";
-        authStatus.style.color = "#6b7280";
+        setAuthHint("Проверка...");
 
         try {
           const res = await fetchWithTimeout(API_BASE, {
@@ -370,43 +504,42 @@
           });
 
           if (res.status === 401) {
-            authStatus.textContent = "Неверный пароль";
-            authStatus.style.color = "#991b1b";
+            setAuthHint("Неверный пароль", true);
             localStorage.removeItem("auth_token");
             savedToken = "";
             return;
           }
 
           if (!res.ok) {
-            authStatus.textContent = "Ошибка сервера: " + res.status;
-            authStatus.style.color = "#991b1b";
+            setAuthHint("Ошибка сервера: " + res.status, true);
             return;
           }
 
           const data = await res.json();
           savedToken = token;
           localStorage.setItem("auth_token", token);
-          authStatus.textContent = "";
+          setAuthHint("");
 
           authSection.style.display = "none";
+          cardTitle.style.display = "none";
           mainSection.style.display = "block";
 
           applyConfig(data);
         } catch (e) {
           if (e.name === "AbortError") {
-            authStatus.textContent = "Сервер не отвечает";
+            setAuthHint("Сервер не отвечает", true);
           } else {
-            authStatus.textContent = "Ошибка сети или CORS";
+            setAuthHint("Ошибка сети или CORS", true);
           }
-          authStatus.style.color = "#991b1b";
           console.error(e);
         } finally {
           authBtn.disabled = false;
         }
       }
 
-      // ── Применение конфига к UI ───────────────────────
+      // ── Применение конфига ────────────────────────────
       function applyConfig(data) {
+        // 1. Заполняем форму
         if (data.publish_time) {
           timeInput.value = data.publish_time;
         }
@@ -422,26 +555,69 @@
         if (data.photo_last_id) {
           lastIdInput.value = data.photo_last_id;
         }
-
         updateCharCounter();
 
+        // 2. Обновляем "текущие настройки" (что на сервере)
+        if (typeof data.publish_time === "string") {
+          currentState.publish_time = data.publish_time;
+        }
+        if (typeof data.photo_first_id === "string") {
+          currentState.photo_first_id = data.photo_first_id;
+        }
+        if (typeof data.photo_last_id === "string") {
+          currentState.photo_last_id = data.photo_last_id;
+        }
         if (typeof data.photos_count === "number") {
-          renderPhotosPreview(
-            data.photos_count,
-            data.photos_first,
-            data.photos_last
-          );
+          currentState.photos_count = data.photos_count;
+        }
+        if (typeof data.post_text === "string") {
+          currentState.post_text = data.post_text;
+        }
+        renderCurrentState();
+      }
+
+      // ── Отрисовка "текущих настроек" ──────────────────
+      function renderCurrentState() {
+        // Время
+        if (currentState.publish_time) {
+          infoTime.textContent = `${currentState.publish_time} МСК`;
+          infoTime.classList.remove("empty");
+        } else {
+          infoTime.textContent = "—";
+          infoTime.classList.add("empty");
+        }
+
+        // Диапазон фото
+        if (currentState.photo_first_id && currentState.photo_last_id) {
+          const f = shortPhotoId(currentState.photo_first_id);
+          const l = shortPhotoId(currentState.photo_last_id);
+          infoPhotos.textContent = `${currentState.photos_count} фото · ${f} → ${l}`;
+          infoPhotos.title = `${currentState.photo_first_id} → ${currentState.photo_last_id}`;
+          infoPhotos.classList.remove("empty");
+        } else {
+          infoPhotos.textContent = "—";
+          infoPhotos.title = "";
+          infoPhotos.classList.add("empty");
+        }
+
+        // Текст
+        const text = (currentState.post_text || "").trim();
+        if (text) {
+          infoText.textContent = text;
+          infoText.classList.remove("empty");
+        } else {
+          infoText.textContent = "—";
+          infoText.classList.add("empty");
         }
       }
 
-      function renderPhotosPreview(count, first, last) {
-        countEl.textContent = count;
-        firstEl.textContent = first || "—";
-        lastEl.textContent = last || "—";
-        previewEl.style.display = "block";
+      // "photo-239232916_456239539" → "456239539"
+      function shortPhotoId(id) {
+        const m = id.match(/^photo-?\d+_(\d+)$/);
+        return m ? m[1] : id;
       }
 
-      // ── Счётчик символов ──────────────────────────────
+      // ── Счётчик ───────────────────────────────────────
       function updateCharCounter() {
         const len = postTextArea.value.length;
         charCounter.textContent = `${len} / ${POST_TEXT_MAX}`;
@@ -450,7 +626,7 @@
 
       postTextArea.addEventListener("input", updateCharCounter);
 
-      // ── Хелпер для авторизованного fetch ──────────────
+      // ── Авторизованный fetch ──────────────────────────
       async function authFetch(url, options = {}) {
         const res = await fetchWithTimeout(url, {
           ...options,
@@ -472,11 +648,19 @@
         localStorage.removeItem("auth_token");
         savedToken = "";
         mainSection.style.display = "none";
+        cardTitle.style.display = "block";
         authSection.style.display = "block";
-        authStatus.textContent = "Пароль устарел, войдите заново";
-        authStatus.style.color = "#991b1b";
+        setAuthHint("Пароль устарел, войдите заново", true);
         statusEl.style.display = "none";
-        previewEl.style.display = "none";
+      }
+
+      // ── Общий обработчик ошибок ───────────────────────
+      function handleRequestError(e) {
+        if (e.message === "AUTH_EXPIRED") return;
+        const msg =
+          e.name === "AbortError" ? "Сервер не отвечает" : "Ошибка сети или CORS";
+        showStatus(msg, "error", 0);
+        console.error(e);
       }
 
       // ── Сохранение времени ────────────────────────────
@@ -500,34 +684,25 @@
           const data = await res.json().catch(() => ({}));
 
           if (res.ok) {
-            showStatus("Время успешно сохранено", "success");
+            showStatus("Время сохранено", "success");
             applyConfig(data);
           } else {
             showStatus(data.error || "Ошибка сервера", "error", 0);
           }
         } catch (e) {
-          if (e.message !== "AUTH_EXPIRED") {
-            const msg =
-              e.name === "AbortError" ? "Сервер не отвечает" : "Ошибка сети или CORS";
-            showStatus(msg, "error", 0);
-            console.error(e);
-          }
+          handleRequestError(e);
         } finally {
           submitTimeBtn.disabled = false;
         }
       });
 
-      timeInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") submitTimeBtn.click();
-      });
-
-      // ── Сохранение текста поста ───────────────────────
+      // ── Сохранение текста ─────────────────────────────
       submitTextBtn.addEventListener("click", async () => {
         const text = postTextArea.value;
 
         if (text.length > POST_TEXT_MAX) {
           showStatus(
-            `Текст слишком длинный: ${text.length} из ${POST_TEXT_MAX}`,
+            `Слишком длинный текст: ${text.length} из ${POST_TEXT_MAX}`,
             "error",
             0
           );
@@ -541,31 +716,25 @@
           const res = await authFetch(`${API_BASE}/post_text`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: text }),
+            body: JSON.stringify({ text }),
           });
 
           const data = await res.json().catch(() => ({}));
 
           if (res.ok) {
-            showStatus("Текст поста сохранён", "success");
+            showStatus("Текст сохранён", "success");
             applyConfig(data);
           } else {
             showStatus(data.error || "Ошибка сервера", "error", 0);
           }
         } catch (e) {
-          if (e.message !== "AUTH_EXPIRED") {
-            const msg =
-              e.name === "AbortError" ? "Сервер не отвечает" : "Ошибка сети или CORS";
-            showStatus(msg, "error", 0);
-            console.error(e);
-          }
+          handleRequestError(e);
         } finally {
           submitTextBtn.disabled = false;
         }
       });
 
       postTextArea.addEventListener("keydown", (e) => {
-        // Ctrl/Cmd + Enter — сохранить
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
           e.preventDefault();
           submitTextBtn.click();
@@ -578,16 +747,12 @@
         const lastId = lastIdInput.value.trim();
 
         if (!firstId || !lastId) {
-          showStatus("Укажите оба ID фото", "error", 0);
+          showStatus("Укажите оба ID", "error", 0);
           return;
         }
 
         if (!PHOTO_ID_RE.test(firstId) || !PHOTO_ID_RE.test(lastId)) {
-          showStatus(
-            "ID должны быть в формате photo<owner>_<id>",
-            "error",
-            0
-          );
+          showStatus("Формат: photo<owner>_<id>", "error", 0);
           return;
         }
 
@@ -604,30 +769,16 @@
           const data = await res.json().catch(() => ({}));
 
           if (res.ok) {
-            showStatus(
-              `Диапазон сохранён — ${data.photos_count} фото`,
-              "success"
-            );
+            showStatus(`Диапазон сохранён — ${data.photos_count} фото`, "success");
             applyConfig(data);
           } else {
             showStatus(data.error || "Ошибка сервера", "error", 0);
           }
         } catch (e) {
-          if (e.message !== "AUTH_EXPIRED") {
-            const msg =
-              e.name === "AbortError" ? "Сервер не отвечает" : "Ошибка сети или CORS";
-            showStatus(msg, "error", 0);
-            console.error(e);
-          }
+          handleRequestError(e);
         } finally {
           submitPhotosBtn.disabled = false;
         }
-      });
-
-      [firstIdInput, lastIdInput].forEach((el) => {
-        el.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") submitPhotosBtn.click();
-        });
       });
 
       // ── Выход ─────────────────────────────────────────
@@ -635,14 +786,37 @@
         localStorage.removeItem("auth_token");
         savedToken = "";
         authInput.value = "";
-        authStatus.textContent = "";
+        setAuthHint("");
         mainSection.style.display = "none";
+        cardTitle.style.display = "block";
         authSection.style.display = "block";
         statusEl.style.display = "none";
-        previewEl.style.display = "none";
+
+        // Сброс формы
+        timeInput.value = "";
+        postTextArea.value = "";
+        firstIdInput.value = "";
+        lastIdInput.value = "";
+        updateCharCounter();
+
+        // Сброс "текущих настроек"
+        Object.assign(currentState, {
+          publish_time: "",
+          photo_first_id: "",
+          photo_last_id: "",
+          photos_count: 0,
+          post_text: "",
+        });
+        renderCurrentState();
+
+        // Вкладка «Время» по умолчанию
+        tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === "time"));
+        Object.entries(panels).forEach(([key, el]) =>
+          el.classList.toggle("active", key === "time")
+        );
       });
 
-      // ── Показ статуса ─────────────────────────────────
+      // ── Статус ────────────────────────────────────────
       let statusTimer = null;
 
       function showStatus(text, type, autoHideMs) {
