@@ -163,7 +163,8 @@
         font-size: 14px;
       }
       input,
-      textarea {
+      textarea,
+      select {
         width: 100%;
         padding: 10px 12px;
         border: 1px solid #d1d5db;
@@ -179,12 +180,14 @@
         min-height: 140px;
       }
       input[type="text"],
-      input[type="password"] {
+      input[type="password"],
+      input[type="number"] {
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size: 13px;
       }
       input:focus,
-      textarea:focus {
+      textarea:focus,
+      select:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
@@ -232,6 +235,20 @@
       .char-counter.over {
         color: #991b1b;
         font-weight: 600;
+      }
+
+      /* ── Режим выбора фото ─────────────────────────── */
+      .photo-mode-fields {
+        margin-top: 8px;
+      }
+      .photo-mode-fields.hidden {
+        display: none;
+      }
+      .field-hint {
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 4px;
+        line-height: 1.4;
       }
 
       /* ── Статус-бар ──────────────────────────────── */
@@ -323,6 +340,10 @@
               <span class="info-value empty" id="infoPhotos" title="">—</span>
             </div>
             <div class="info-row">
+              <span class="info-label">Режим фото</span>
+              <span class="info-value empty" id="infoPhotoMode">—</span>
+            </div>
+            <div class="info-row">
               <span class="info-label">Текст</span>
               <span class="info-value info-text empty" id="infoText">—</span>
             </div>
@@ -384,6 +405,27 @@
               spellcheck="false"
             />
           </div>
+          <div class="field">
+            <label for="photoMode">Режим выбора фото</label>
+            <select id="photoMode">
+              <option value="random">Рандомно (уникальные)</option>
+              <option value="sequential">Каждые N фото (по порядку)</option>
+            </select>
+            <div class="photo-mode-fields hidden" id="photoModeFields">
+              <label for="photosPerPost" style="margin-top: 12px;">Сколько фото на пост</label>
+              <input
+                type="number"
+                id="photosPerPost"
+                min="1"
+                max="10"
+                value="4"
+              />
+              <div class="field-hint">
+                Например, при значении 4: первому посту достанутся фото 1–4,
+                следующему — 5–8, и так далее по порядку из диапазона.
+              </div>
+            </div>
+          </div>
           <button id="submitPhotosBtn">Сохранить диапазон</button>
         </div>
 
@@ -412,6 +454,7 @@
 
       const infoTime = document.getElementById("infoTime");
       const infoPhotos = document.getElementById("infoPhotos");
+      const infoPhotoMode = document.getElementById("infoPhotoMode");
       const infoText = document.getElementById("infoText");
 
       const tabs = document.querySelectorAll(".tab");
@@ -430,18 +473,22 @@
 
       const firstIdInput = document.getElementById("photoFirstId");
       const lastIdInput = document.getElementById("photoLastId");
+      const photoModeSelect = document.getElementById("photoMode");
+      const photoModeFields = document.getElementById("photoModeFields");
+      const photosPerPostInput = document.getElementById("photosPerPost");
       const submitPhotosBtn = document.getElementById("submitPhotosBtn");
 
       const logoutBtn = document.getElementById("logoutBtn");
       const statusEl = document.getElementById("status");
 
       // ── Состояние "на сервере" ────────────────────────
-      // Отдельно от формы: показывает, что реально сохранено.
       const currentState = {
         publish_time: "",
         photo_first_id: "",
         photo_last_id: "",
         photos_count: 0,
+        photo_mode: "random",
+        photos_per_post: 4,
         post_text: "",
       };
 
@@ -463,6 +510,13 @@
           statusEl.style.display = "none";
         });
       });
+
+      // ── Режим выбора фото: показать/скрыть доп. поля ──
+      function updatePhotoModeVisibility() {
+        const isSequential = photoModeSelect.value === "sequential";
+        photoModeFields.classList.toggle("hidden", !isSequential);
+      }
+      photoModeSelect.addEventListener("change", updatePhotoModeVisibility);
 
       // ── fetch с таймаутом ─────────────────────────────
       async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
@@ -555,6 +609,13 @@
         if (data.photo_last_id) {
           lastIdInput.value = data.photo_last_id;
         }
+        if (typeof data.photo_mode === "string") {
+          photoModeSelect.value = data.photo_mode;
+        }
+        if (typeof data.photos_per_post === "number") {
+          photosPerPostInput.value = data.photos_per_post;
+        }
+        updatePhotoModeVisibility();
         updateCharCounter();
 
         // 2. Обновляем "текущие настройки" (что на сервере)
@@ -569,6 +630,12 @@
         }
         if (typeof data.photos_count === "number") {
           currentState.photos_count = data.photos_count;
+        }
+        if (typeof data.photo_mode === "string") {
+          currentState.photo_mode = data.photo_mode;
+        }
+        if (typeof data.photos_per_post === "number") {
+          currentState.photos_per_post = data.photos_per_post;
         }
         if (typeof data.post_text === "string") {
           currentState.post_text = data.post_text;
@@ -598,6 +665,15 @@
           infoPhotos.textContent = "—";
           infoPhotos.title = "";
           infoPhotos.classList.add("empty");
+        }
+
+        // Режим фото
+        if (currentState.photo_mode === "sequential") {
+          infoPhotoMode.textContent = `По порядку · по ${currentState.photos_per_post} шт.`;
+          infoPhotoMode.classList.remove("empty");
+        } else {
+          infoPhotoMode.textContent = "Рандомно";
+          infoPhotoMode.classList.remove("empty");
         }
 
         // Текст
@@ -756,6 +832,21 @@
           return;
         }
 
+        const photoMode = photoModeSelect.value;
+        let photosPerPost = 3;
+
+        if (photoMode === "sequential") {
+          photosPerPost = parseInt(photosPerPostInput.value, 10);
+          if (!photosPerPost || photosPerPost < 1) {
+            showStatus("Укажите сколько фото на пост (минимум 1)", "error", 0);
+            return;
+          }
+          if (photosPerPost > 10) {
+            showStatus("Максимум 10 фото на пост (лимит ВКонтакте)", "error", 0);
+            return;
+          }
+        }
+
         submitPhotosBtn.disabled = true;
         showStatus("Отправка...", "info", 0);
 
@@ -763,7 +854,12 @@
           const res = await authFetch(`${API_BASE}/photos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ first_id: firstId, last_id: lastId }),
+            body: JSON.stringify({
+              first_id: firstId,
+              last_id: lastId,
+              photo_mode: photoMode,
+              photos_per_post: photosPerPost,
+            }),
           });
 
           const data = await res.json().catch(() => ({}));
@@ -797,6 +893,9 @@
         postTextArea.value = "";
         firstIdInput.value = "";
         lastIdInput.value = "";
+        photoModeSelect.value = "random";
+        photosPerPostInput.value = 4;
+        updatePhotoModeVisibility();
         updateCharCounter();
 
         // Сброс "текущих настроек"
@@ -805,6 +904,8 @@
           photo_first_id: "",
           photo_last_id: "",
           photos_count: 0,
+          photo_mode: "random",
+          photos_per_post: 4,
           post_text: "",
         });
         renderCurrentState();
