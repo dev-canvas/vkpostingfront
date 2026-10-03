@@ -304,6 +304,61 @@
         background: #f3f4f6;
         color: #374151;
       }
+
+      /* ── Очистка подписчиков ─────────────────────────── */
+      .cleanup-hint {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 20px;
+        line-height: 1.5;
+      }
+      .cleanup-progress {
+        margin-top: 16px;
+        padding: 12px 14px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 13px;
+        line-height: 1.6;
+        display: none;
+      }
+      .cleanup-progress.visible {
+        display: block;
+      }
+      .cleanup-stat {
+        display: flex;
+        justify-content: space-between;
+        padding: 3px 0;
+      }
+      .cleanup-stat-label {
+        color: #6b7280;
+      }
+      .cleanup-stat-value {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+      .cleanup-errors {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #e5e7eb;
+        color: #991b1b;
+        font-size: 12px;
+        word-break: break-word;
+      }
+      .cleanup-spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #007bff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
     </style>
   </head>
   <body>
@@ -355,6 +410,7 @@
           <button class="tab active" data-tab="time" role="tab">Время</button>
           <button class="tab" data-tab="text" role="tab">Текст</button>
           <button class="tab" data-tab="photos" role="tab">Фото</button>
+          <button class="tab" data-tab="cleanup" role="tab">Очистка</button>
         </div>
 
         <!-- Панель: Время -->
@@ -429,6 +485,34 @@
           <button id="submitPhotosBtn">Сохранить диапазон</button>
         </div>
 
+        <!-- Панель: Очистка -->
+        <div class="panel" id="panel-cleanup">
+          <p class="cleanup-hint">
+            Удаляет из подписчиков сообщества пользователей, которые удалены
+            или забанены администрацией ВКонтакте. Процесс может занять
+            несколько минут для больших сообществ.
+          </p>
+          <button id="cleanupBtn">Запустить очистку</button>
+          <div class="cleanup-progress" id="cleanupProgress">
+            <div id="cleanupProgressText"></div>
+            <div id="cleanupStats" style="display:none; margin-top: 8px;">
+              <div class="cleanup-stat">
+                <span class="cleanup-stat-label">Всего подписчиков</span>
+                <span class="cleanup-stat-value" id="cleanupTotal">—</span>
+              </div>
+              <div class="cleanup-stat">
+                <span class="cleanup-stat-label">Неактивных найдено</span>
+                <span class="cleanup-stat-value" id="cleanupInactive">—</span>
+              </div>
+              <div class="cleanup-stat">
+                <span class="cleanup-stat-label">Удалено</span>
+                <span class="cleanup-stat-value" id="cleanupRemoved">—</span>
+              </div>
+              <div class="cleanup-errors" id="cleanupErrors" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+
         <button id="logoutBtn" class="logout-btn">Выйти</button>
       </div>
 
@@ -438,6 +522,7 @@
     <script>
       // ── НАСТРОЙКИ ──────────────────────────────────────
       const API_BASE = "https://autopostingvkas.bothost.tech/api/schedule";
+      const CLEANUP_API_BASE = "https://cleanupvk.bothost.tech"; // <-- URL бэкенда очистки
 
       const REQUEST_TIMEOUT_MS = 15000;
       const STATUS_AUTOHIDE_MS = 3000;
@@ -462,6 +547,7 @@
         time: document.getElementById("panel-time"),
         text: document.getElementById("panel-text"),
         photos: document.getElementById("panel-photos"),
+        cleanup: document.getElementById("panel-cleanup"),
       };
 
       const timeInput = document.getElementById("publishTime");
@@ -477,6 +563,15 @@
       const photoModeFields = document.getElementById("photoModeFields");
       const photosPerPostInput = document.getElementById("photosPerPost");
       const submitPhotosBtn = document.getElementById("submitPhotosBtn");
+
+      const cleanupBtn = document.getElementById("cleanupBtn");
+      const cleanupProgress = document.getElementById("cleanupProgress");
+      const cleanupProgressText = document.getElementById("cleanupProgressText");
+      const cleanupStats = document.getElementById("cleanupStats");
+      const cleanupTotal = document.getElementById("cleanupTotal");
+      const cleanupInactive = document.getElementById("cleanupInactive");
+      const cleanupRemoved = document.getElementById("cleanupRemoved");
+      const cleanupErrors = document.getElementById("cleanupErrors");
 
       const logoutBtn = document.getElementById("logoutBtn");
       const statusEl = document.getElementById("status");
@@ -877,6 +972,106 @@
         }
       });
 
+      // ── Очистка неактивных подписчиков ────────────────
+      let cleanupPollId = null;
+      let cleanupRunning = false;
+
+      cleanupBtn.addEventListener("click", async () => {
+        if (cleanupRunning) return;
+
+        cleanupRunning = true;
+        cleanupBtn.disabled = true;
+        cleanupBtn.textContent = "Очистка выполняется…";
+        cleanupProgress.classList.add("visible");
+        cleanupStats.style.display = "none";
+        cleanupErrors.style.display = "none";
+        cleanupProgressText.innerHTML =
+          '<span class="cleanup-spinner"></span>Запуск задачи…';
+
+        try {
+          const res = await fetchWithTimeout(`${CLEANUP_API_BASE}/clean`, {
+            method: "POST",
+          }, 30000);
+
+          if (!res.ok) {
+            throw new Error("Ошибка запуска: " + res.status);
+          }
+
+          const data = await res.json();
+
+          // Если бэкенд уже вернул ошибку «задача выполняется»
+          if (data.errors && data.errors.length && data.errors[0].includes("уже")) {
+            cleanupProgressText.textContent = data.errors[0];
+            cleanupRunning = false;
+            cleanupBtn.disabled = false;
+            cleanupBtn.textContent = "Запустить очистку";
+            return;
+          }
+
+          cleanupProgressText.innerHTML =
+            '<span class="cleanup-spinner"></span>Задача запущена. Проверка статуса…';
+          pollCleanupStatus();
+        } catch (e) {
+          const msg =
+            e.name === "AbortError" ? "Сервер не отвечает" : "Ошибка: " + e.message;
+          cleanupProgressText.textContent = msg;
+          cleanupRunning = false;
+          cleanupBtn.disabled = false;
+          cleanupBtn.textContent = "Запустить очистку";
+        }
+      });
+
+      function pollCleanupStatus() {
+        if (cleanupPollId) clearInterval(cleanupPollId);
+
+        const intervalMs = 3000;
+
+        cleanupPollId = setInterval(async () => {
+          try {
+            const res = await fetchWithTimeout(`${CLEANUP_API_BASE}/status`);
+            if (!res.ok) throw new Error("Ошибка получения статуса");
+            const data = await res.json();
+
+            if (data.running) {
+              cleanupProgressText.innerHTML =
+                '<span class="cleanup-spinner"></span>Выполняется очистка…';
+              return;
+            }
+
+            // Готово
+            clearInterval(cleanupPollId);
+            cleanupPollId = null;
+            cleanupRunning = false;
+            cleanupBtn.disabled = false;
+            cleanupBtn.textContent = "Запустить очистку";
+
+            const r = data.result;
+            if (!r) {
+              cleanupProgressText.textContent = "Нет данных о результате.";
+              return;
+            }
+
+            cleanupProgressText.textContent = "Очистка завершена.";
+            cleanupStats.style.display = "block";
+            cleanupTotal.textContent = r.total_members.toLocaleString("ru-RU");
+            cleanupInactive.textContent = r.inactive_found.toLocaleString("ru-RU");
+            cleanupRemoved.textContent = r.removed.toLocaleString("ru-RU");
+
+            if (r.errors && r.errors.length) {
+              const errList = r.errors.slice(0, 20).join(", ");
+              const more =
+                r.errors.length > 20
+                  ? `… и ещё ${r.errors.length - 20}`
+                  : "";
+              cleanupErrors.textContent = `Не удалось удалить (${r.errors.length}): ${errList}${more}`;
+              cleanupErrors.style.display = "block";
+            }
+          } catch (e) {
+            console.error("cleanup polling error", e);
+          }
+        }, intervalMs);
+      }
+
       // ── Выход ─────────────────────────────────────────
       logoutBtn.addEventListener("click", () => {
         localStorage.removeItem("auth_token");
@@ -897,6 +1092,18 @@
         photosPerPostInput.value = 4;
         updatePhotoModeVisibility();
         updateCharCounter();
+
+        // Сброс очистки
+        if (cleanupPollId) {
+          clearInterval(cleanupPollId);
+          cleanupPollId = null;
+        }
+        cleanupRunning = false;
+        cleanupBtn.disabled = false;
+        cleanupBtn.textContent = "Запустить очистку";
+        cleanupProgress.classList.remove("visible");
+        cleanupStats.style.display = "none";
+        cleanupErrors.style.display = "none";
 
         // Сброс "текущих настроек"
         Object.assign(currentState, {
